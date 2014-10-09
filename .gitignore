@@ -1,0 +1,15 @@
+# IDEA Files #
+.idea/*
+*.iml
+
+# Generated Artifacts #
+target/
+*/target/*
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# Java classes #
+*.class
