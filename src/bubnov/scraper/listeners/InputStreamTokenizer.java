@@ -1,4 +1,4 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
 
 import java.io.IOException;
@@ -9,7 +9,7 @@ public class InputStreamTokenizer extends TokenSender<Character> {
         //TODO use buffered
         int current = inputStream.read();
         while (current != -1) {
-            sendToken((char)current);
+            sendToken((char) current);
             current = inputStream.read();
         }
         flush();

@@ -1,6 +1,6 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
-import bubnov.crawler.ReportProducer;
+import bubnov.scraper.ReportProducer;
 
 import java.io.PrintWriter;
 import java.util.*;
@@ -13,14 +13,15 @@ public class BuzzSentenceListener implements TokenListener<Collection<String>>, 
     public BuzzSentenceListener(TokenSender<Collection<String>> source,Collection<String> words) {
         mySentences = new ArrayList<Collection<String>>();
         buzzWords.addAll(words);
+        for (String word : words) {
+            buzzWords.add(word.toLowerCase());
+        }
         mySource = source;
         mySource.registerListener(this);
     }
 
     @Override
     public void receive(Collection<String> sentence) {
-        System.out.println("received sentence : " + sentence);
-
         boolean hasBuzzWords = false;
         for (String word : sentence) {
             if (buzzWords.contains(word)) {

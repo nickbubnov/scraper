@@ -1,8 +1,8 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
 public class WordTokenizer extends TokenSender<String> implements TokenListener<Character> {
-    private StringBuilder currentWord;
     private final TokenSender<Character> mySource;
+    private StringBuilder currentWord;
 
     public WordTokenizer(TokenSender<Character> source) {
         currentWord = new StringBuilder();

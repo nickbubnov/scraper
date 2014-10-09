@@ -1,12 +1,15 @@
-package bubnov.crawler;
+package bubnov.scraper;
 
 
+import bubnov.scraper.listeners.*;
 
-
-import bubnov.crawler.listeners.*;
-
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 
 /**
  * Command line parameters example for Java implementation:
@@ -37,16 +40,23 @@ public class Main {
         boolean extractSentences = false;
 
         for (int argNumber = 2; argNumber < args.length; argNumber++) {
-            if (args[argNumber].equals("-v")) {
+            //System.out.println("\"" + args[argNumber] + "\"");
+
+            if (args[argNumber].equalsIgnoreCase("–v")) {
+                System.out.println("Verbose");
                 verbose = true;
             }
-            if (args[argNumber].equals("-w")) {
+
+            if (args[argNumber].equalsIgnoreCase("–w")) {
+                System.out.println("count word occurrence");
                 countWordOccurrences = true;
             }
-            if (args[argNumber].equals("-c")) {
+            if (args[argNumber].equalsIgnoreCase("–c")) {
+                System.out.println("count chars");
                 countCharacters = true;
             }
-            if (args[argNumber].equals("-e")) {
+            if (args[argNumber].equalsIgnoreCase("–e")) {
+                System.out.println("extract sentences");
                 extractSentences = true;
             }
         }
@@ -78,7 +88,7 @@ public class Main {
                 continue;
             }
 
-            writer.println("URL: " + url);
+            writer.println("URL STATS: " + url);
             for (ReportProducer producer : localReporters) {
                 producer.report(writer);
                 producer.stopReporting();
@@ -92,6 +102,7 @@ public class Main {
             producer.stopReporting();
         }
         writer.println("");
+        writer.flush();
 
         sentenceTokenizer.unregister();
         wordTokenizer.unregister();
@@ -100,7 +111,9 @@ public class Main {
 
     private static Collection<String> fillDataSources(String dataSource) {
         //TODO
-        return null;
+        Collection<String> urls = new ArrayList<String>();
+        urls.add(dataSource);
+        return urls;
     }
 
     private static void addBuzzSentenceListener(boolean extractSentences, TokenSender<Collection<String>> tokenSender, Collection<ReportProducer> reporters, Collection<String> buzzWords) {

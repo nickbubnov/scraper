@@ -1,6 +1,6 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
-import bubnov.crawler.ReportProducer;
+import bubnov.scraper.ReportProducer;
 
 import java.io.PrintWriter;
 import java.util.Collection;
@@ -16,14 +16,15 @@ public class WordOccurrenceCounter implements TokenListener<String>, ReportProdu
         mySource.registerListener(this);
         myOccurenceCounter = new HashMap<String, Integer>();
         for (String word : words) {
-            myOccurenceCounter.put(word, 0);
+            myOccurenceCounter.put(word.toLowerCase(), 0);
         }
     }
 
     @Override
     public void receive(String word) {
-        if (myOccurenceCounter.containsKey(word)) {
-            myOccurenceCounter.put(word, myOccurenceCounter.get(word) + 1);
+        String lowerWord = word.toLowerCase();
+        if (myOccurenceCounter.containsKey(lowerWord)) {
+            myOccurenceCounter.put(lowerWord, myOccurenceCounter.get(lowerWord) + 1);
         }
     }
 

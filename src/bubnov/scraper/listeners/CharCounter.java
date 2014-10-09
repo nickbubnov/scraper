@@ -1,13 +1,13 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
 
-import bubnov.crawler.ReportProducer;
+import bubnov.scraper.ReportProducer;
 
 import java.io.PrintWriter;
 
 public class CharCounter implements TokenListener<Character>, ReportProducer {
-    private int myCounter;
     private final TokenSender<Character> mySource;
+    private int myCounter;
 
     public CharCounter(TokenSender<Character> source) {
         mySource = source;

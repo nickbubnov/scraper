@@ -1,1 +1,2 @@
-Main-Class: bubnov.crawler.Main
+Class-Path: bubnov.scraper
+Main-Class: bubnov.scraper.Main

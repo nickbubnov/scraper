@@ -1,8 +1,8 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
 public class HtmlTagFilter extends TokenSender<Character> implements TokenListener<Character> {
-    private boolean insideTag;
     private final TokenSender<Character> mySource;
+    private boolean insideTag;
 
     public HtmlTagFilter(TokenSender<Character> source) {
         insideTag = false;

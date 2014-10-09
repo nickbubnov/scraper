@@ -1,9 +1,10 @@
-package bubnov.crawler;
+package bubnov.scraper;
 
 
 import java.io.PrintWriter;
 
 public interface ReportProducer {
     public void report(PrintWriter writer);
+
     public void stopReporting();
 }

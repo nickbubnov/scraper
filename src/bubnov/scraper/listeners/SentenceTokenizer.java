@@ -1,12 +1,12 @@
-package bubnov.crawler.listeners;
+package bubnov.scraper.listeners;
 
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class SentenceTokenizer extends TokenSender<Collection<String>> implements TokenListener<String>{
-    private Collection<String> currentSentence;
     private final TokenSender<String> mySource;
+    private Collection<String> currentSentence;
 
     public SentenceTokenizer(TokenSender<String> source) {
         currentSentence = new ArrayList<String>();
@@ -16,7 +16,6 @@ public class SentenceTokenizer extends TokenSender<Collection<String>> implement
 
     @Override
     public void receive(String word) {
-        System.out.println("received word " + word);
         if (!word.equals(".")) {
             currentSentence.add(word);
         } else {
