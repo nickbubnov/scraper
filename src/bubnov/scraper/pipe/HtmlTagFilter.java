@@ -1,18 +1,15 @@
-package bubnov.scraper.listeners;
+package bubnov.scraper.pipe;
 
 public class HtmlTagFilter extends TokenSender<Character> implements TokenListener<Character> {
-    private final TokenSender<Character> mySource;
     private boolean insideTag;
 
     public HtmlTagFilter(TokenSender<Character> source) {
         insideTag = false;
-        mySource = source;
-        mySource.registerListener(this);
+        source.registerListener(this);
     }
 
     @Override
     public void receive(Character character) {
-        //TODO add script tag filters
         if (character.equals('<')) {
             insideTag = true;
             flush();
@@ -26,10 +23,5 @@ public class HtmlTagFilter extends TokenSender<Character> implements TokenListen
                 }
             }
         }
-    }
-
-    @Override
-    public void unregister() {
-        mySource.removeListener(this);
     }
 }

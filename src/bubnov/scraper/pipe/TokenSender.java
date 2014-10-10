@@ -1,4 +1,4 @@
-package bubnov.scraper.listeners;
+package bubnov.scraper.pipe;
 
 
 import java.util.HashSet;

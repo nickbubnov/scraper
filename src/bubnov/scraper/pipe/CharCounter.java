@@ -1,7 +1,5 @@
-package bubnov.scraper.listeners;
+package bubnov.scraper.pipe;
 
-
-import bubnov.scraper.ReportProducer;
 
 import java.io.PrintWriter;
 
@@ -36,10 +34,6 @@ public class CharCounter implements TokenListener<Character>, ReportProducer {
     public void report(PrintWriter writer) {
         int charCounter = getCounter();
         writer.println("Char count: " + charCounter);
-    }
-
-    @Override
-    public void stopReporting() {
-        unregister();
+        writer.println();
     }
 }

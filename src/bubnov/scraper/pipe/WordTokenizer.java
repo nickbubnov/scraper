@@ -1,13 +1,11 @@
-package bubnov.scraper.listeners;
+package bubnov.scraper.pipe;
 
 public class WordTokenizer extends TokenSender<String> implements TokenListener<Character> {
-    private final TokenSender<Character> mySource;
     private StringBuilder currentWord;
 
     public WordTokenizer(TokenSender<Character> source) {
         currentWord = new StringBuilder();
-        mySource = source;
-        mySource.registerListener(this);
+        source.registerListener(this);
     }
 
     @Override
@@ -21,8 +19,8 @@ public class WordTokenizer extends TokenSender<String> implements TokenListener<
                 currentWord = new StringBuilder();
             }
 
-            if (ch == '.') {
-                sendToken(".");
+            if (ch != ' ') {
+                sendToken(character.toString());
             }
         }
     }
@@ -35,10 +33,5 @@ public class WordTokenizer extends TokenSender<String> implements TokenListener<
         }
 
         super.flush();
-    }
-
-    @Override
-    public void unregister() {
-        mySource.removeListener(this);
     }
 }

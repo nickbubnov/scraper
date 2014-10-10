@@ -1,16 +1,14 @@
-package bubnov.scraper.listeners;
-
-import bubnov.scraper.ReportProducer;
+package bubnov.scraper.pipe;
 
 import java.io.PrintWriter;
 import java.util.*;
 
-public class BuzzSentenceListener implements TokenListener<Collection<String>>, ReportProducer{
+public class BuzzSentencesExtractor implements TokenListener<Collection<String>>, ReportProducer{
     private final TokenSender<Collection<String>> mySource;
     private final List<Collection<String>> mySentences;
     private final Set<String> buzzWords = new HashSet<String>();
 
-    public BuzzSentenceListener(TokenSender<Collection<String>> source,Collection<String> words) {
+    public BuzzSentencesExtractor(TokenSender<Collection<String>> source, Collection<String> words) {
         mySentences = new ArrayList<Collection<String>>();
         buzzWords.addAll(words);
         for (String word : words) {
@@ -24,7 +22,7 @@ public class BuzzSentenceListener implements TokenListener<Collection<String>>, 
     public void receive(Collection<String> sentence) {
         boolean hasBuzzWords = false;
         for (String word : sentence) {
-            if (buzzWords.contains(word)) {
+            if (buzzWords.contains(word.toLowerCase())) {
                 hasBuzzWords = true;
                 break;
             }
@@ -58,10 +56,6 @@ public class BuzzSentenceListener implements TokenListener<Collection<String>>, 
             }
             writer.println();
         }
-    }
-
-    @Override
-    public void stopReporting() {
-        unregister();
+        writer.println();
     }
 }

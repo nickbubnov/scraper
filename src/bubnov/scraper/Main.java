@@ -1,27 +1,14 @@
 package bubnov.scraper;
 
+import bubnov.scraper.pipe.*;
 
-import bubnov.scraper.listeners.*;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-
-/**
- * Command line parameters example for Java implementation:
- * java –jar scraper.jar http://www.cnn.com Greece,default –v –w –c –e
- */
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Args: ");
-        for (String arg : args) {
-            System.out.println(":" + arg);
-        }
-
         if (args.length < 2) {
             showUsage();
             return;
@@ -30,111 +17,141 @@ public class Main {
         String dataSource = args[0];
 
         Collection<String> buzzWords = new ArrayList<String>();
-
-        //TODO check split
         Collections.addAll(buzzWords, args[1].split(","));
+        CommandFlags commandFlags = readCommandFlags(args);
 
-        boolean verbose = false;
-        boolean countCharacters = false;
-        boolean countWordOccurrences = false;
-        boolean extractSentences = false;
-
-        for (int argNumber = 2; argNumber < args.length; argNumber++) {
-            //System.out.println("\"" + args[argNumber] + "\"");
-
-            if (args[argNumber].equalsIgnoreCase("–v")) {
-                System.out.println("Verbose");
-                verbose = true;
-            }
-
-            if (args[argNumber].equalsIgnoreCase("–w")) {
-                System.out.println("count word occurrence");
-                countWordOccurrences = true;
-            }
-            if (args[argNumber].equalsIgnoreCase("–c")) {
-                System.out.println("count chars");
-                countCharacters = true;
-            }
-            if (args[argNumber].equalsIgnoreCase("–e")) {
-                System.out.println("extract sentences");
-                extractSentences = true;
-            }
-        }
+        ScrapingStatus scrapingStatus = new ScrapingStatus();
+        startScraping(commandFlags, scrapingStatus);
 
         InputStreamTokenizer inputStreamTokenizer = new InputStreamTokenizer();
         HtmlTagFilter charSource = new HtmlTagFilter(inputStreamTokenizer);
         WordTokenizer wordTokenizer = new WordTokenizer(charSource);
         SentenceTokenizer sentenceTokenizer = new SentenceTokenizer(wordTokenizer);
 
-        Collection<ReportProducer> globalReporters = new HashSet<ReportProducer>();
-        addCharCounter(countCharacters, charSource, globalReporters);
-        addWordOccurrenceCounter(countWordOccurrences, wordTokenizer, globalReporters, buzzWords);
-        addBuzzSentenceListener(extractSentences, sentenceTokenizer, globalReporters, buzzWords);
-
-        Collection<String> dataSources = fillDataSources(dataSource);
+        Collection<ReportProducer> globalReporters = fillReporters(commandFlags, charSource, wordTokenizer, sentenceTokenizer, buzzWords);
 
         PrintWriter writer = new PrintWriter(System.out);
-        for (String url : dataSources) {
-            Collection<ReportProducer> localReporters = new HashSet<ReportProducer>();
-            addCharCounter(countCharacters, charSource, localReporters);
-            addWordOccurrenceCounter(countWordOccurrences, wordTokenizer, localReporters, buzzWords);
-            addBuzzSentenceListener(extractSentences, sentenceTokenizer, localReporters, buzzWords);
+        Collection<String> dataSources;
+        try {
+            dataSources = fillDataSources(dataSource);
+        } catch (Exception e) {
+            writer.println("Unable to load urls from file");
+            return;
+        }
 
+        for (String url : dataSources) {
+            Collection<ReportProducer> localReporters = fillReporters(commandFlags, charSource, wordTokenizer, sentenceTokenizer, buzzWords);
+
+            startUrlScraping(commandFlags, scrapingStatus);
             try {
-                InputStream inputStream = WebReader.readPage(url);
+                InputStream inputStream = readPage(url);
                 inputStreamTokenizer.tokenizeStream(inputStream);
             } catch (IOException e) {
-                writer.println("Exception while handling url " + url + " " + e.getMessage());
+                //writer.println("Could not load " + url + " : " + e.getMessage());
+                writer.println("Could not load " + url);
+                writer.println();
                 continue;
             }
 
             writer.println("URL STATS: " + url);
             for (ReportProducer producer : localReporters) {
                 producer.report(writer);
-                producer.stopReporting();
+                producer.unregister();
             }
             writer.println();
+            endUrlScraping(writer, commandFlags, scrapingStatus);
+            writer.flush();
+
         }
 
-        writer.println("Global stats: ");
+        writer.println("GLOBAL STATS: ");
         for (ReportProducer producer : globalReporters) {
             producer.report(writer);
-            producer.stopReporting();
+            producer.unregister();
         }
-        writer.println("");
+        writer.println();
+        endScraping(writer, commandFlags, scrapingStatus);
+        writer.println();
+
         writer.flush();
-
-        sentenceTokenizer.unregister();
-        wordTokenizer.unregister();
-        charSource.unregister();
     }
 
-    private static Collection<String> fillDataSources(String dataSource) {
-        //TODO
-        Collection<String> urls = new ArrayList<String>();
-        urls.add(dataSource);
-        return urls;
-    }
-
-    private static void addBuzzSentenceListener(boolean extractSentences, TokenSender<Collection<String>> tokenSender, Collection<ReportProducer> reporters, Collection<String> buzzWords) {
-        if (extractSentences) {
-            BuzzSentenceListener buzzSentenceListener = new BuzzSentenceListener(tokenSender, buzzWords);
-            reporters.add(buzzSentenceListener);
+    private static void startScraping(CommandFlags commandFlags, ScrapingStatus scrapingStatus) {
+        if (commandFlags.verbose) {
+            scrapingStatus.globalScrapingStart = new Date();
         }
     }
 
-    private static void addWordOccurrenceCounter(boolean countWordOccurrences, TokenSender<String> wordSender, Collection<ReportProducer> reporters, Collection<String> buzzWords) {
-        if (countWordOccurrences) {
-            WordOccurrenceCounter wordOccurrenceCounter = new WordOccurrenceCounter(wordSender, buzzWords);
-            reporters.add(wordOccurrenceCounter);
+    private static void startUrlScraping(CommandFlags commandFlags, ScrapingStatus scrapingStatus) {
+        if (commandFlags.verbose) {
+            scrapingStatus.urlScrapingStart = new Date();
         }
     }
 
-    private static void addCharCounter(boolean countCharacters, TokenSender<Character> charSource, Collection<ReportProducer> reporters) {
-        if (countCharacters) {
+    private static void endUrlScraping(PrintWriter writer, CommandFlags commandFlags, ScrapingStatus scrapingStatus) {
+        if (commandFlags.verbose) {
+            Date urlScrapingEnd = new Date();
+            long duration = urlScrapingEnd.getTime() - scrapingStatus.urlScrapingStart.getTime();
+            writer.println("Site parsed in " + duration + "ms");
+            writer.println();
+        }
+    }
+
+    private static void endScraping(PrintWriter writer, CommandFlags commandFlags, ScrapingStatus scrapingStatus) {
+        if (commandFlags.verbose) {
+            Date globalScrapingEnd = new Date();
+            long duration = globalScrapingEnd.getTime() - scrapingStatus.globalScrapingStart.getTime();
+            writer.println("Sources parsed in " + duration + "ms");
+        }
+    }
+
+
+    private static Collection<ReportProducer> fillReporters(CommandFlags commandFlags, TokenSender<Character> charSource, TokenSender<String> wordSource, TokenSender<Collection<String>> sentenceSource, Collection<String> buzzWords) {
+        Set<ReportProducer> reporters = new HashSet<ReportProducer>();
+        if (commandFlags.countCharacters) {
             CharCounter charCounter = new CharCounter(charSource);
             reporters.add(charCounter);
         }
+        if (commandFlags.countWordOccurrences) {
+            WordOccurrenceCounter wordOccurrenceCounter = new WordOccurrenceCounter(wordSource, buzzWords);
+            reporters.add(wordOccurrenceCounter);
+        }
+        if (commandFlags.extractSentences) {
+            BuzzSentencesExtractor buzzSentencesExtractor = new BuzzSentencesExtractor(sentenceSource, buzzWords);
+            reporters.add(buzzSentencesExtractor);
+        }
+        return reporters;
+    }
+
+    private static Collection<String> fillDataSources(String dataSource) throws Exception {
+        Collection<String> urls = new ArrayList<String>();
+
+        if (dataSource.startsWith("http")) {
+            urls.add(dataSource);
+        } else {
+            urls.addAll(loadUrlsFromFile(dataSource));
+        }
+
+        return urls;
+    }
+
+    private static Collection<String> loadUrlsFromFile(String filename) throws Exception {
+        Collection<String> urls = new ArrayList<String>();
+
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(filename));
+        String url;
+        while ((url = bufferedReader.readLine()) != null) {
+            urls.add(url);
+        }
+        bufferedReader.close();
+        return urls;
+    }
+
+    public static InputStream readPage(String url) throws IOException {
+        URL myURL = new URL(url);
+        URLConnection myURLConnection = myURL.openConnection();
+        myURLConnection.connect();
+        return myURLConnection.getInputStream();
     }
 
     private static void showUsage() {
@@ -148,5 +165,36 @@ public class Main {
         System.out.println("-w - count buzz word occurrences");
         System.out.println("-c - count characters");
         System.out.println("-e - extract sentences which contain buzzwords");
+    }
+
+    private static CommandFlags readCommandFlags(String[] args) {
+        CommandFlags commandFlags = new CommandFlags();
+        for (int argNumber = 2; argNumber < args.length; argNumber++) {
+            if (args[argNumber].equalsIgnoreCase("–v") || args[argNumber].equalsIgnoreCase("-v")) {
+                commandFlags.verbose = true;
+            }
+            if (args[argNumber].equalsIgnoreCase("–w") || args[argNumber].equalsIgnoreCase("-w")) {
+                commandFlags.countWordOccurrences = true;
+            }
+            if (args[argNumber].equalsIgnoreCase("–c") || args[argNumber].equalsIgnoreCase("-c")) {
+                commandFlags.countCharacters = true;
+            }
+            if (args[argNumber].equalsIgnoreCase("–e") || args[argNumber].equalsIgnoreCase("-e")) {
+                commandFlags.extractSentences = true;
+            }
+        }
+        return commandFlags;
+    }
+
+    private static class CommandFlags {
+        public boolean verbose = false;
+        public boolean countWordOccurrences = false;
+        public boolean countCharacters = false;
+        public boolean extractSentences = false;
+    }
+
+    private static class ScrapingStatus {
+        public Date globalScrapingStart;
+        public Date urlScrapingStart;
     }
 }

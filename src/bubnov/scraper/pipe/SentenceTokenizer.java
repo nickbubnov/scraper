@@ -1,17 +1,15 @@
-package bubnov.scraper.listeners;
+package bubnov.scraper.pipe;
 
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class SentenceTokenizer extends TokenSender<Collection<String>> implements TokenListener<String>{
-    private final TokenSender<String> mySource;
     private Collection<String> currentSentence;
 
     public SentenceTokenizer(TokenSender<String> source) {
         currentSentence = new ArrayList<String>();
-        mySource = source;
-        mySource.registerListener(this);
+        source.registerListener(this);
     }
 
     @Override
@@ -31,10 +29,5 @@ public class SentenceTokenizer extends TokenSender<Collection<String>> implement
         } else {
             super.flush();
         }
-    }
-
-    @Override
-    public void unregister() {
-        mySource.removeListener(this);
     }
 }

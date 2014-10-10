@@ -1,18 +1,19 @@
-package bubnov.scraper.listeners;
+package bubnov.scraper.pipe;
 
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 public class InputStreamTokenizer extends TokenSender<Character> {
     public void tokenizeStream(InputStream inputStream) throws IOException {
-        //TODO use buffered
-        int current = inputStream.read();
+        BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+        int current = bufferedInputStream.read();
         while (current != -1) {
             sendToken((char) current);
-            current = inputStream.read();
+            current = bufferedInputStream.read();
         }
         flush();
-        inputStream.close();
+        bufferedInputStream.close();
     }
 }
